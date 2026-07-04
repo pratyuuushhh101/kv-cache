@@ -64,8 +64,8 @@ def run_generation(quantize: bool):
                         old_k, recent_k = k[:, :, :-RECENT_WINDOW, :], k[:, :, -RECENT_WINDOW:, :]
                         old_v, recent_v = v[:, :, :-RECENT_WINDOW, :], v[:, :, -RECENT_WINDOW:, :]
 
-                        qk, sk, zk = quantize_tensor(old_k)
-                        qv, sv, zv = quantize_tensor(old_v)
+                        qk, sk, zk = quantize_tensor(old_k, dim=-1)
+                        qv, sv, zv = quantize_tensor(old_v, dim=2)
                         old_k_r = dequantize_tensor(qk, sk, zk)
                         old_v_r = dequantize_tensor(qv, sv, zv)
 
