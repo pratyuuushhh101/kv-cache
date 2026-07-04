@@ -45,6 +45,7 @@ K --> L[Predict Next Token]
 L --> M[Append Token]
 
 M --> D
+```
 
 # Why KV Cache Matters
 
