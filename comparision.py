@@ -40,6 +40,47 @@ def theoretical_cache_size_mb(cache, recent_window):
 
     return total_bytes / (1024 ** 2)
 
+def run_generation_fp16():
+    inputs = tokenizer(PROMPT, return_tensors="pt")
+    input_ids = inputs["input_ids"]
+    generated = input_ids
+
+    start = time.perf_counter()
+
+    with torch.no_grad():
+        out = model(input_ids=input_ids, use_cache=True)
+        cache = out.past_key_values
+        next_token = out.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+        generated = torch.cat([generated, next_token], dim=1)
+
+        for step in range(MAX_NEW_TOKENS - 1):
+            for layer in cache.layers:
+                # Cast entire cache to fp16 (simulating fp16 storage), then back to fp32 for computation
+                layer.keys = layer.keys.half().float()
+                layer.values = layer.values.half().float()
+
+            out = model(input_ids=next_token, past_key_values=cache, use_cache=True)
+            cache = out.past_key_values
+            next_token = out.logits[:, -1, :].argmax(dim=-1, keepdim=True)
+            generated = torch.cat([generated, next_token], dim=1)
+
+    elapsed = time.perf_counter() - start
+    text = tokenizer.decode(generated[0], skip_special_tokens=True)
+
+    return {
+        "elapsed_sec": elapsed,
+        "tokens_per_sec": MAX_NEW_TOKENS / elapsed,
+        "text": text,
+        "cache": cache,
+    }
+
+def fp16_cache_size_mb(cache):
+    total_bytes = 0
+    for layer in cache.layers:
+        k, v = layer.keys, layer.values
+        total_bytes += k.numel() * 2  # 2 bytes per fp16 element
+        total_bytes += v.numel() * 2
+    return total_bytes / (1024 ** 2)
 
 def run_generation(quantize: bool):
     inputs = tokenizer(PROMPT, return_tensors="pt")
@@ -94,14 +135,24 @@ baseline = run_generation(quantize=False)
 print("Running quantized version...")
 quantized = run_generation(quantize=True)
 
+print("Running FP16 version...")
+fp16_result = run_generation_fp16()
+fp16_cache_mb = fp16_cache_size_mb(fp16_result["cache"])
+
 baseline_cache_mb = cache_size_mb(baseline["cache"])
 quantized_cache_mb = theoretical_cache_size_mb(quantized["cache"], RECENT_WINDOW)
 
 print("\n=== COMPARISON ===")
-print(f"{'Metric':<24}{'Full Precision':<20}{'Quantized':<20}")
-print(f"{'Time (s)':<24}{baseline['elapsed_sec']:<20.3f}{quantized['elapsed_sec']:<20.3f}")
-print(f"{'Tokens/sec':<24}{baseline['tokens_per_sec']:<20.2f}{quantized['tokens_per_sec']:<20.2f}")
-print(f"{'Cache size (MB)':<24}{baseline_cache_mb:<20.4f}{quantized_cache_mb:<20.4f}")
+print(f"{'Metric':<24}{'FP32':<20}{'FP16':<20}{'INT8 (quantized)':<20}")
+print(f"{'Time (s)':<24}{baseline['elapsed_sec']:<20.3f}{fp16_result['elapsed_sec']:<20.3f}{quantized['elapsed_sec']:<20.3f}")
+print(f"{'Tokens/sec':<24}{baseline['tokens_per_sec']:<20.2f}{fp16_result['tokens_per_sec']:<20.2f}{quantized['tokens_per_sec']:<20.2f}")
+print(f"{'Cache size (MB)':<24}{baseline_cache_mb:<20.4f}{fp16_cache_mb:<20.4f}{quantized_cache_mb:<20.4f}")
+
+# print("\n=== COMPARISON ===")
+# print(f"{'Metric':<24}{'Full Precision':<20}{'Quantized':<20}")
+# print(f"{'Time (s)':<24}{baseline['elapsed_sec']:<20.3f}{quantized['elapsed_sec']:<20.3f}")
+# print(f"{'Tokens/sec':<24}{baseline['tokens_per_sec']:<20.2f}{quantized['tokens_per_sec']:<20.2f}")
+# print(f"{'Cache size (MB)':<24}{baseline_cache_mb:<20.4f}{quantized_cache_mb:<20.4f}")
 
 reduction = (1 - quantized_cache_mb / baseline_cache_mb) * 100
 print(f"\nTheoretical cache size reduction: {reduction:.1f}%")
