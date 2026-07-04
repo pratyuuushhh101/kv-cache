@@ -1,11 +1,5 @@
 # KV-Cache Quantization for LLM Inference
 
-An implementation and evaluation of **INT8 KV-cache quantization** for transformer inference on GPT-2.
-
-Instead of relying on existing quantization libraries, this project implements the core ideas behind **KIVI** from scratch by directly manipulating Hugging Face's `DynamicCache` during autoregressive generation. It benchmarks the memory–quality tradeoff across FP32, FP16, and INT8 precision.
-
----
-
 ## Highlights
 
 - Built a custom token-by-token generation loop (no `.generate()`)
@@ -46,7 +40,7 @@ L --> M[Append Token]
 M --> D
 ```
 
-# Why KV Cache Matters
+<!-- # Why KV Cache Matters
 
 During autoregressive generation, transformer models cache attention **Keys** and **Values** from previous tokens instead of recomputing them every decoding step.
 
@@ -54,7 +48,7 @@ While this dramatically speeds up inference, the cache grows **linearly with seq
 
 This project explores one practical mitigation strategy: **compressing the KV cache using INT8 quantization while preserving generation quality.**
 
----
+--- -->
 
 # Results
 
@@ -139,29 +133,31 @@ The implementation follows KIVI's central idea:
 
 # Key Findings
 
-### 1. Per-channel / per-token quantization consistently outperformed whole-tensor quantization.
+1. Per-channel / per-token quantization consistently outperformed whole-tensor quantization.
 
-Lower reconstruction error was observed on both synthetic tensors and real GPT-2 KV-cache tensors.
+<!-- Lower reconstruction error was observed on both synthetic tensors and real GPT-2 KV-cache tensors.
 
+--- -->
+
+2. Asymmetric quantization outperformed symmetric quantization.
+
+<!-- Although GPT-2 key tensors are centered near zero, their value distribution is noticeably skewed (approximately **[-6.22, 7.91]**). Allowing a learned zero-point reduced reconstruction error by roughly **15%**, matching the design choices made in methods such as KIVI.
+
+--- -->
+
+3. FP16 is essentially free.
+
+<!-- FP16 reduced memory usage by **50%** without measurable quality degradation.
+
+--- -->
+
+4. INT8 introduces a small, measurable quality cost.
+
+<!-- Average perplexity increased by **0.71%**, with technical text showing greater sensitivity than conversational or narrative text.
+
+--- -->
 ---
 
-### 2. Asymmetric quantization outperformed symmetric quantization.
-
-Although GPT-2 key tensors are centered near zero, their value distribution is noticeably skewed (approximately **[-6.22, 7.91]**). Allowing a learned zero-point reduced reconstruction error by roughly **15%**, matching the design choices made in methods such as KIVI.
-
----
-
-### 3. FP16 is essentially free.
-
-FP16 reduced memory usage by **50%** without measurable quality degradation.
-
----
-
-### 4. INT8 introduces a small, measurable quality cost.
-
-Average perplexity increased by **0.71%**, with technical text showing greater sensitivity than conversational or narrative text.
-
----
 
 # Limitations
 
