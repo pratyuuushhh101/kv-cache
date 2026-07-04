@@ -16,6 +16,36 @@ Instead of relying on existing quantization libraries, this project implements t
 
 ---
 
+```mermaid
+flowchart LR
+
+A[Prompt] --> B[Tokenizer]
+B --> C[Input IDs]
+
+C --> D[Forward Pass]
+
+D --> E[DynamicCache]
+
+E --> F{Recent Window?}
+
+F -->|Recent| G[Keep FP32]
+
+F -->|Older| H[INT8 Quantize]
+
+G --> I[Cache]
+
+H --> I
+
+I --> J[Dequantize]
+
+J --> K[Next Forward Pass]
+
+K --> L[Predict Next Token]
+
+L --> M[Append Token]
+
+M --> D
+
 # Why KV Cache Matters
 
 During autoregressive generation, transformer models cache attention **Keys** and **Values** from previous tokens instead of recomputing them every decoding step.
