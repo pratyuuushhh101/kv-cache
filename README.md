@@ -63,6 +63,7 @@ This project explores one practical mitigation strategy: **compressing the KV ca
 | FP32 | 3.2344 MB | — | 25.2188 | — |
 | FP16 | 1.6172 MB | 50.0% | 25.2183 | ~0% |
 | INT8 | 1.0197 MB | **68.5%** | 25.3979 | **0.71%** |
+
 ![Memory comparison](memory_comparison.png)
 ![Quantization granularity comparison](quantization_granularity.png)
 ![Perplexity by passage](perplexity_by_passage.png)
