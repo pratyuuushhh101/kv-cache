@@ -85,10 +85,10 @@ Perplexity was measured using teacher forcing across three diverse text passages
 ---
 # Implementation
 
-1. **Baseline Benchmark** — inference latency, throughput, and memory usage across multiple prompt lengths.
-2. **Cache Inspection** — direct inspection of `past_key_values`: tensor shapes, dtypes, cache growth, exact storage footprint.
-3. **Quantization** — symmetric, asymmetric, whole-tensor, per-channel, and per-token quantization, implemented from scratch and validated independently before integration.
-4. **Manual Generation Loop** — token-by-token generation with direct `DynamicCache` manipulation. Recent KV entries stay full precision; older entries are stored as INT8 and dequantized before reuse (KIVI's core idea).
+1. **Baseline Benchmark**: inference latency, throughput, and memory usage across multiple prompt lengths.
+2. **Cache Inspection**: direct inspection of `past_key_values`: tensor shapes, dtypes, cache growth, exact storage footprint.
+3. **Quantization**: implemented symmetric, asymmetric, whole-tensor, per-channel, and per-token quantization
+4. **Manual Generation Loop**: token-by-token generation with direct `DynamicCache` manipulation. Recent KV entries stay full precision; older entries are stored as INT8 and dequantized before reuse.
 ---
 <!-- 
 # Implementation
@@ -171,11 +171,3 @@ The implementation follows KIVI's central idea:
 - Memory reduction is **theoretical**. Quantized tensors are stored compactly, but attention still operates on dequantized floating-point tensors.
 - Evaluated on GPT-2 (124M) running on CPU rather than production-scale LLMs.
 - Throughput measurements are CPU-only and single-run; latency should therefore be interpreted as approximate.
-
----
-
-# Model
-
-- GPT-2 Small (124M parameters)
-- PyTorch
-- Hugging Face Transformers
