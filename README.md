@@ -15,6 +15,7 @@ Instead of relying on existing quantization libraries, this project implements t
 - Benchmarked FP32, FP16, and INT8 using latency, memory, and perplexity
 
 ---
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -29,11 +30,9 @@ D --> E[DynamicCache]
 E --> F{Recent Window?}
 
 F -->|Recent| G[Keep FP32]
-
 F -->|Older| H[INT8 Quantize]
 
 G --> I[Cache]
-
 H --> I
 
 I --> J[Dequantize]
