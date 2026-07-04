@@ -83,7 +83,14 @@ Perplexity was measured using teacher forcing across three diverse text passages
 | `perplexity_eval.py` | Teacher-forced perplexity evaluation across multiple passages |
 
 ---
+# Implementation
 
+1. **Baseline Benchmark** — inference latency, throughput, and memory usage across multiple prompt lengths.
+2. **Cache Inspection** — direct inspection of `past_key_values`: tensor shapes, dtypes, cache growth, exact storage footprint.
+3. **Quantization** — symmetric, asymmetric, whole-tensor, per-channel, and per-token quantization, implemented from scratch and validated independently before integration.
+4. **Manual Generation Loop** — token-by-token generation with direct `DynamicCache` manipulation. Recent KV entries stay full precision; older entries are stored as INT8 and dequantized before reuse (KIVI's core idea).
+---
+<!-- 
 # Implementation
 
 The project consists of four major components.
@@ -129,7 +136,7 @@ The implementation follows KIVI's central idea:
 - older entries are stored using INT8
 - dequantization occurs before reuse during attention
 
----
+--- -->
 
 # Key Findings
 
